@@ -25,11 +25,6 @@ from ...utils import (
 
 
 def get_project_by_id_or_404(project_id: int):
-    """During the transitional period, project_id may be either the internal or the public ID of the project."""
-    project = DirectAwardProject.query.filter(DirectAwardProject.id == project_id).first()
-    if project:
-        return project
-
     return DirectAwardProject.query.filter(DirectAwardProject.external_id == project_id).first_or_404()
 
 
