@@ -19,6 +19,26 @@ from app.models import (
 from tests.bases import BaseApplicationTest
 from tests.helpers import FixtureMixin
 
+class TestJSON(BaseApplicationTest):
+    def test_foo(self):
+        self.framework = Framework.query.filter(Framework.slug == 'digital-outcomes-and-specialists').first()
+        self.lot = self.framework.get_lot('digital-outcomes')
+
+        brief = Brief(data={"myList": ["one item"]}, framework=self.framework, lot=self.lot)
+        db.session.add(brief)
+        db.session.commit()
+
+        brief_id = brief.id
+        assert brief_id > 0
+
+        brief.data["myList"].append("second item")
+        db.session.add(brief)
+        db.session.commit()
+
+        brief_from_db = Brief.query.get(brief.id)
+        assert brief_from_db.data == {"myList": ["one item", "second item"]}
+
+
 
 class TestUser(BaseApplicationTest, FixtureMixin):
     def test_should_not_return_password_on_user(self):
@@ -921,7 +941,7 @@ class TestBriefResponses(BaseApplicationTest, FixtureMixin):
             submitted_at=datetime.utcnow(),
             award_details={'pending': True},
         )
-        brief_response.award_details = {'confirmed': 'details'},
+        brief_response.award_details = {'confirmed': 'details'}
         brief_response.awarded_at = datetime(2016, 1, 1)
         db.session.add(brief_response)
         db.session.commit()
@@ -1082,13 +1102,13 @@ class TestBriefResponses(BaseApplicationTest, FixtureMixin):
             data={}, brief=brief, supplier=self.supplier, submitted_at=datetime.utcnow(),
             award_details={'pending': True},
         )
-        brief_response1.award_details = {'confirmed': 'details'},
+        brief_response1.award_details = {'confirmed': 'details'}
         brief_response1.awarded_at = timestamp
         brief_response2 = BriefResponse(
             data={}, brief=brief, supplier=self.supplier, submitted_at=datetime.utcnow(),
             award_details={'pending': True},
         )
-        brief_response2.award_details = {'confirmed': 'details'},
+        brief_response2.award_details = {'confirmed': 'details'}
         brief_response2.awarded_at = timestamp
         db.session.add_all([brief_response1, brief_response2])
         with pytest.raises(IntegrityError) as exc:

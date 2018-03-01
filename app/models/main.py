@@ -3,7 +3,7 @@
 from datetime import datetime
 
 import re
-import sqlalchemy.dialects.postgresql
+from sqlalchemy.dialects.postgresql import JSON as postgresJSON
 from flask import current_app
 from flask_sqlalchemy import BaseQuery
 from six import string_types, iteritems
@@ -25,6 +25,7 @@ from sqlalchemy.sql.expression import (
 )
 from sqlalchemy.types import String
 from sqlalchemy_utils import generic_relationship
+from sqlalchemy_json import NestedMutable, NestedMutableJson, MutableJson
 
 from dmutils.dates import get_publishing_dates
 from dmutils.formats import DATETIME_FORMAT, DATE_FORMAT
@@ -44,7 +45,8 @@ from ..validation import (
 )
 
 
-class JSON(sqlalchemy.dialects.postgresql.JSON):
+
+class JSON(postgresJSON):
     """
     Override SQLAlchemy JSON class to enforce None=>SQL-NULL mapping.
     (We want to avoid JSON-null and have consistency across our models.)
@@ -52,6 +54,8 @@ class JSON(sqlalchemy.dialects.postgresql.JSON):
 
     def __init__(self, astext_type=None):
         super(JSON, self).__init__(none_as_null=True, astext_type=astext_type)
+
+NestedMutable.associate_with(JSON)
 
 
 class FrameworkLot(db.Model):
