@@ -36,6 +36,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/digitalmarketplace'
     SQLALCHEMY_RECORD_QUERIES = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = True
 
     DM_FAILED_LOGIN_LIMIT = 5
 
