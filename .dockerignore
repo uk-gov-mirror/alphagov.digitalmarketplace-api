@@ -8,3 +8,4 @@
 !json_schemas/
 !migrations/
 !requirements.txt
+!instrumented_sqlqlchemy_engine.py
