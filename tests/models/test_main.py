@@ -17,7 +17,7 @@ from app.models import (
     ContactInformation
 )
 from tests.bases import BaseApplicationTest
-from tests.helpers import FixtureMixin
+from tests.helpers import FixtureMixin, null_context_manager
 
 
 class TestUser(BaseApplicationTest, FixtureMixin):
@@ -251,6 +251,26 @@ class TestFrameworks(BaseApplicationTest):
             'hasDirectAward': True,
             'hasFurtherCompetition': False,
         }
+
+    @pytest.mark.parametrize('old_status, new_status, should_raise',
+                             (
+                                 (old_status, new_status, j != (i + 1))
+                                 for i, old_status in enumerate(Framework.STATUSES)
+                                 for j, new_status in enumerate(Framework.STATUSES)
+                             ))
+    def test_framework_status_update_restricted_to_forward_progression_only(self, old_status, new_status, should_raise):
+        f = Framework(
+            id=109,
+            name='foo',
+            slug='foo-109',
+            framework='g-cloud',
+            status=old_status,
+            has_direct_award=True,
+            has_further_competition=False,
+        )
+
+        with pytest.raises(ValidationError) if should_raise else null_context_manager():
+            f.status = new_status
 
 
 class TestBriefs(BaseApplicationTest, FixtureMixin):

@@ -200,6 +200,9 @@ class Framework(db.Model):
         if value not in self.STATUSES:
             raise ValidationError("Invalid status value '{}'".format(value))
 
+        if self.status and self.STATUSES.index(value) != (self.STATUSES.index(self.status) + 1):
+            raise ValidationError(f"Framework status can only move forward.")
+
         return value
 
     @validates('framework')

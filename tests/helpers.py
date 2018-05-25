@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from contextlib import contextmanager
 import json
 import os
 from datetime import datetime, timedelta
@@ -330,3 +331,8 @@ def get_audit_events(client, audit_type):
     return [
         event for event in data['auditEvents'] if event['type'] == audit_type.value
     ]
+
+
+@contextmanager
+def null_context_manager():
+    yield
