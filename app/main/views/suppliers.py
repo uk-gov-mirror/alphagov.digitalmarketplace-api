@@ -1,7 +1,7 @@
+from collections import defaultdict
 from datetime import datetime
 
 from flask import jsonify, abort, request, current_app
-from itertools import groupby
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, DataError
 from sqlalchemy.orm import lazyload
@@ -102,26 +102,25 @@ def export_suppliers_for_framework(framework_slug):
 
     lot_slugs_by_id = {lot.id: lot.slug for lot in framework.lots}
 
-    # Creates a dictionary of dictionaries, with published service counts per lot per supplier.
-    # To do this we use dictionary comprehension, SQL query and itertools' 'groupby' function.
-    # Grouping by supplier id is more efficient as this is what we will be iterating over later.
-    service_counts_by_lot_by_supplier = {
-        supplier_id: {row[1]: row[2] for row in rows}
-        for supplier_id, rows in groupby(
-            db.session.query(
-                Service.supplier_id,
-                Service.lot_id,
-                func.count(Service.id)
-            ).filter(
-                Service.status == 'published',
-                Service.framework_id == framework.id
-            ).group_by(
-                Service.supplier_id,
-                Service.lot_id,
-            ).all(),
-            key=lambda row: row[0],
+    # Creates a list of tuples  like [(supplier_id, lot_id, number_of_services_on_lot),]
+    supplier_id_lot_id_service_count_tuples = db.session.query(
+        Service.supplier_id,
+        Service.lot_id,
+        func.count(Service.id)
+    ).filter(
+        Service.status == 'published',
+        Service.framework_id == framework.id
+    ).group_by(
+        Service.supplier_id,
+        Service.lot_id,
+    ).all()
+
+    # Convert the above to a dictionary like {supplier_id: {lot_1_slug: lot_1_count, lot_2_slug: lot_2_count}}
+    service_counts_by_lot_by_supplier_id = defaultdict(dict)
+    for supplier_id, lot_id, service_count in supplier_id_lot_id_service_count_tuples:
+        service_counts_by_lot_by_supplier_id.setdefault(supplier_id, {}).update(
+            {lot_slugs_by_id[lot_id]: service_count}
         )
-    }
 
     suppliers_and_framework = db.session.query(
         SupplierFramework, Supplier, ContactInformation
@@ -164,6 +163,11 @@ def export_suppliers_for_framework(framework_slug):
             framework_agreement = bool(getattr(sf.current_framework_agreement, 'signed_agreement_returned_at', None))
             variations_agreed = ', '.join(sf.agreed_variations.keys()) if sf.agreed_variations else ''
 
+        # Set a default published service count dict
+        published_services_count = {lot_slug: 0 for lot_slug in lot_slugs_by_id.values()}
+        # Update our default with service_counts_by_lot_by_supplier_id
+        published_services_count.update(service_counts_by_lot_by_supplier_id.get(supplier.supplier_id, {}))
+
         supplier_rows.append({
             "supplier_id": supplier.supplier_id,
             "supplier_name": supplier.name,
@@ -176,12 +180,7 @@ def export_suppliers_for_framework(framework_slug):
             'declaration_status': declaration_status,
             'framework_agreement': framework_agreement,
             'variations_agreed': variations_agreed,
-            "published_services_count": {
-                lot_slugs_by_id[lot_id]: service_counts_by_lot_by_supplier.get(
-                    supplier.supplier_id, {}
-                ).get(lot_id, 0)
-                for lot_id in lot_slugs_by_id.keys()
-            },
+            "published_services_count": published_services_count,
             "contact_information": {
                 'contact_name': ci.contact_name,
                 'contact_email': ci.email,
