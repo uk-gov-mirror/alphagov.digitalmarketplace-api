@@ -25,8 +25,12 @@ class DirectAwardProject(db.Model):
     external_id = db.Column(db.BigInteger, default=random_positive_external_id, nullable=False, index=True, unique=True)
     name = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    locked_at = db.Column(db.DateTime, nullable=True)  # When the project's active search/es are final and cannot change
-    downloaded_at = db.Column(db.DateTime, nullable=True)  # When the project's shortlist was last downloaded
+    # When the project's active search/es are final and cannot change
+    locked_at = db.Column(db.DateTime, nullable=True)
+    # When the project's shortlist was last downloaded
+    downloaded_at = db.Column(db.DateTime, nullable=True)
+    # The most recent time the user declared that they were "still assessing" for this project
+    still_assessing_at = db.Column(db.DateTime, nullable=True)
     active = db.Column(db.Boolean, default=True, nullable=False)
 
     users = db.relationship(
@@ -60,6 +64,10 @@ class DirectAwardProject(db.Model):
             "createdAt": self.created_at.strftime(DATETIME_FORMAT),
             "lockedAt": self.locked_at.strftime(DATETIME_FORMAT) if self.locked_at is not None else None,
             "downloadedAt": self.downloaded_at.strftime(DATETIME_FORMAT) if self.downloaded_at is not None else None,
+            "stillAssessingAt": (
+                self.still_assessing_at.strftime(DATETIME_FORMAT)
+                if self.still_assessing_at is not None else None
+            ),
             "active": self.active,
             "outcome": self.outcome.serialize() if self.outcome is not None else None,
         }
