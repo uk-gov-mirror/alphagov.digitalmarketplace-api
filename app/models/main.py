@@ -880,6 +880,7 @@ class User(db.Model, RemovePersonalDataModelMixin):
     password_changed_at = db.Column(db.DateTime, index=False, unique=False,
                                     nullable=False)
     logged_in_at = db.Column(db.DateTime, nullable=True)
+    logged_in = db.Column(db.Boolean, nullable=False)
 
     # used to determine whether account is `locked`. field is reset upon successful login or can
     # be reset manually to "unlock" an account.
@@ -937,6 +938,7 @@ class User(db.Model, RemovePersonalDataModelMixin):
             'name': self.name,
             'role': self.role,
             'active': self.active,
+            'loggedIn': self.logged_in,
             'locked': self.locked,
             'createdAt': self.created_at.strftime(DATETIME_FORMAT),
             'updatedAt': self.updated_at.strftime(DATETIME_FORMAT),

@@ -69,6 +69,7 @@ def auth_user():
     elif encryption.authenticate_user(json_payload['password'], user) and user.active:
         user.logged_in_at = datetime.utcnow()
         user.failed_login_count = 0
+        user.logged_in = True
         db.session.add(user)
         db.session.commit()
 
@@ -97,6 +98,43 @@ def auth_user():
         db.session.commit()
 
         return jsonify(authorization=False), 403
+
+
+@main.route('/users/end-session', methods=['PUT'])
+def end_session():
+    json_payload = get_json_from_request()
+    json_has_required_keys(json_payload, ['authUsers', 'updated_by'])
+    json_payload = json_payload['authUsers']
+    validate_user_auth_json_or_400(json_payload)
+
+    user = User.query.filter(
+        User.email_address == json_payload['emailAddress'].lower()
+    ).with_for_update(of=User).first()
+
+    if user is None:
+        audit = AuditEvent(
+            audit_type=AuditTypes.end_session_failed,
+            user=json_payload['updated_by'],
+            data=json_payload["authUsers"],
+            db_object=user
+        )
+        db.session.add(audit)
+        db.session.commit()
+        return jsonify(success='false'), 404
+    else:
+        user.logged_in = False
+        db.session.add(user)
+        db.session.commit()
+        audit = AuditEvent(
+            audit_type=AuditTypes.end_session,
+            user=json_payload['updated_by'],
+            data=json_payload["authUsers"],
+            db_object=user
+        )
+        db.session.add(audit)
+        db.session.commit()
+
+        return jsonify(success='OK'), 200
 
 
 @main.route('/users/<int:user_id>', methods=['GET'])
