@@ -429,9 +429,9 @@ def export_users_for_framework(framework_slug):
     return jsonify(users=user_rows), 200
 
 
-@main.route("/users/check-buyer-email", methods=["GET"])
+@main.route("/users/check-buyer-email", methods=["POST"])
 def email_has_valid_buyer_domain():
-    email_address = request.args.get('email_address')
+    email_address = request.form.get('email_address')
     if not email_address:
         abort(400, "'email_address' is a required parameter")
 

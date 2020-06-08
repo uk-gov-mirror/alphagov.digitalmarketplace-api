@@ -2112,17 +2112,17 @@ class TestUsersEmailCheck(BaseUserTest):
         db.session.add(BuyerEmailDomain(domain_name="bananas.org"))
         db.session.commit()
 
-        response = self.client.get('/users/check-buyer-email', query_string={'email_address': 'buyer@bananas.org'})
+        response = self.client.post('/users/check-buyer-email', data={'email_address': 'buyer@bananas.org'})
         assert response.status_code == 200
         assert json.loads(response.get_data())['valid'] is True
 
     def test_invalid_email_is_not_ok(self):
-        response = self.client.get('/users/check-buyer-email', query_string={'email_address': 'someone@notgov.uk'})
+        response = self.client.post('/users/check-buyer-email', data={'email_address': 'someone@notgov.uk'})
         assert response.status_code == 200
         assert json.loads(response.get_data())['valid'] is False
 
     def test_email_address_is_required(self):
-        response = self.client.get('/users/check-buyer-email')
+        response = self.client.post('/users/check-buyer-email')
         assert response.status_code == 400
 
 
